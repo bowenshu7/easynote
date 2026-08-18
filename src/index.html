@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>贴边笔记</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="titlebar">
+    <div class="brand"><span class="logo">N</span><span>贴边笔记</span><span id="dirty"></span></div>
+    <div class="window-actions">
+      <button id="topBtn" title="置顶/取消置顶 (Ctrl+T)">📌</button>
+      <button id="minBtn" title="收起为悬浮窗">—</button>
+      <button id="closeBtn" class="close" title="关闭">×</button>
+    </div>
+  </header>
+  <main>
+    <nav class="toolbar">
+      <button id="newBtn">新建</button>
+      <button id="openBtn">打开</button>
+      <button id="saveBtn" class="primary">保存</button>
+      <button id="saveAsBtn">另存为</button>
+      <span class="divider"></span>
+      <button id="imageBtn">插入图片</button>
+      <button id="settingsBtn">⚙ 设置</button>
+    </nav>
+    <nav class="formatbar">
+      <div class="search-box"><input id="searchInput" type="search" placeholder="搜索笔记…"><button id="searchPrev" title="上一个">↑</button><button id="searchNext" title="下一个">↓</button><button id="searchClose" title="清除搜索">×</button><span id="searchResult"></span></div>
+      <span class="spacer"></span>
+      <span class="tip">Ctrl+F 搜索 · Ctrl+S 保存 · Ctrl+T 置顶</span>
+    </nav>
+    <div id="editorShell"><section id="editor" contenteditable="true" spellcheck="true" data-placeholder="写点什么吧……"></section></div>
+    <footer><span id="status">未命名.txt</span><span id="count">0 字</span></footer>
+  </main>
+  <div id="settingsModal" class="modal" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <div class="modal-header"><h2 id="settingsTitle">笔记显示设置</h2><button id="settingsClose" title="关闭">×</button></div>
+      <div class="settings-grid">
+        <div class="settings-form">
+          <fieldset><legend>背景应用范围</legend>
+            <label><input type="radio" name="backgroundScope" value="global" checked> 全局默认</label>
+            <label><input type="radio" name="backgroundScope" value="local"> 仅当前笔记</label>
+            <p class="help">全局设置用于新笔记；局部设置随当前笔记保存。</p>
+          </fieldset>
+          <label class="setting-row"><span>背景图片</span><span><button id="chooseBackgroundBtn">选择图片</button><button id="clearBackgroundBtn">清除</button></span></label>
+          <label class="setting-row"><span>背景透明度</span><span><input id="backgroundOpacity" type="range" min="0" max="100" value="18"><b id="opacityValue">18%</b></span></label>
+          <label class="setting-row"><span>字号</span><span><input id="fontSize" type="number" min="10" max="48" value="17"> px</span></label>
+          <label class="setting-row"><span>行距</span><span><input id="lineHeight" type="number" min="1" max="3" step="0.1" value="1.8"></span></label>
+          <label class="setting-row"><span>行间横线</span><input id="ruledLines" type="checkbox"></label>
+        </div>
+        <div><div class="preview-label">效果预览</div><div id="settingsPreview"><p>在这里预览笔记背景与排版。</p><p>每一行文字都清晰可读。</p><p>调整选项后会立即更新。</p></div></div>
+      </div>
+      <div class="modal-actions"><button id="settingsCancel">取消</button><button id="settingsApply" class="primary">应用设置</button></div>
+    </div>
+  </div>
+  <script src="renderer.js"></script>
+</body>
+</html>

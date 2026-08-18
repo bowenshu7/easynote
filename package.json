@@ -1,0 +1,26 @@
+{
+  "name": "edge-note",
+  "version": "1.0.0",
+  "description": "A lightweight Windows note app with always-on-top and edge-docked floating mode.",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "check": "node --check src/main.js && node --check src/preload.js && node --check src/renderer.js",
+    "dist": "electron-builder --win portable"
+  },
+  "devDependencies": {
+    "electron": "^37.2.6",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.zreedom.edgenote",
+    "productName": "贴边笔记",
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "portable"
+    }
+  }
+}
