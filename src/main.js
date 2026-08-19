@@ -2,7 +2,11 @@ const { app, BrowserWindow, dialog, ipcMain, screen } = require('electron');
 const fs = require('fs/promises');
 const path = require('path');
 let mainWindow, bubbleWindow, allowClose = false;
+let bubbleDragInterval = null, bubbleDragTimeout = null, bubbleDragStart = null, bubbleDragOffset = null;
+let bubbleMode = 'bubble';
+const BUBBLE_SIZE = 58, MARKER_WIDTH = 14, MARKER_HEIGHT = 42, EDGE_THRESHOLD = 24, SCREEN_MARGIN = 4;
 const appConfigPath = () => path.join(app.getPath('userData'), 'app-settings.json');
+const bubbleStatePath = () => path.join(app.getPath('userData'), 'bubble-state.json');
 async function readConfig() {
   try { return JSON.parse(await fs.readFile(appConfigPath(), 'utf8')); }
   catch {
@@ -22,30 +26,102 @@ function createMainWindow() {
   mainWindow.on('close', event => { if (!allowClose && mainWindow?.webContents) { event.preventDefault(); mainWindow.webContents.send('window:close-requested'); } });
   mainWindow.on('closed', () => { mainWindow = null; if (bubbleWindow) bubbleWindow.close(); });
 }
-function createBubble() {
-  if (bubbleWindow) return;
-  const area = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workArea;
-  bubbleWindow = new BrowserWindow({ width: 64, height: 64, x: area.x + area.width - 72, y: area.y + Math.round(area.height * .36), frame: false, transparent: true, resizable: false, alwaysOnTop: true, skipTaskbar: true, webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false } });
-  bubbleWindow.loadFile(path.join(__dirname, 'bubble.html')); bubbleWindow.on('closed', () => { bubbleWindow = null; });
+async function readBubbleState() {
+  try { return JSON.parse(await fs.readFile(bubbleStatePath(), 'utf8')); }
+  catch { return null; }
 }
-function snapBubble() {
-  if (!bubbleWindow) return; const bounds = bubbleWindow.getBounds(); const area = screen.getDisplayMatching(bounds).workArea;
-  const x = bounds.x + bounds.width / 2 < area.x + area.width / 2 ? area.x + 6 : area.x + area.width - bounds.width - 6;
-  const y = Math.max(area.y + 6, Math.min(bounds.y, area.y + area.height - bounds.height - 6)); bubbleWindow.setPosition(x, y, true);
+async function saveBubbleState(display, bounds) {
+  try { await fs.writeFile(bubbleStatePath(), JSON.stringify({ mode: bubbleMode, displayId: display.id, x: bounds.x, y: bounds.y }, null, 2), 'utf8'); }
+  catch {}
+}
+function bubbleDisplay(state) {
+  const displays = screen.getAllDisplays();
+  return displays.find(display => String(display.id) === String(state?.displayId)) ||
+    screen.getDisplayNearestPoint(state && Number.isFinite(state.x) && Number.isFinite(state.y) ? { x: state.x, y: state.y } : screen.getCursorScreenPoint());
+}
+function markerBounds(side, y, area) {
+  return {
+    x: side === 'left' ? area.x : area.x + area.width - MARKER_WIDTH,
+    y: Math.max(area.y + SCREEN_MARGIN, Math.min(Math.round(y), area.y + area.height - MARKER_HEIGHT - SCREEN_MARGIN)),
+    width: MARKER_WIDTH,
+    height: MARKER_HEIGHT
+  };
+}
+function bubbleBounds(x, y, area) {
+  return {
+    x: Math.max(area.x + SCREEN_MARGIN, Math.min(Math.round(x), area.x + area.width - BUBBLE_SIZE - SCREEN_MARGIN)),
+    y: Math.max(area.y + SCREEN_MARGIN, Math.min(Math.round(y), area.y + area.height - BUBBLE_SIZE - SCREEN_MARGIN)),
+    width: BUBBLE_SIZE,
+    height: BUBBLE_SIZE
+  };
+}
+function setBubbleMode(mode, bounds) {
+  if (!bubbleWindow || bubbleWindow.isDestroyed()) return;
+  bubbleMode = mode; bubbleWindow.setBounds(bounds, true); bubbleWindow.webContents.send('bubble:mode', mode);
+}
+async function createBubble() {
+  if (bubbleWindow) return;
+  const state = await readBubbleState(); const display = bubbleDisplay(state); const area = display.workArea;
+  bubbleMode = ['left', 'right'].includes(state?.mode) ? state.mode : 'bubble';
+  const initialBounds = bubbleMode === 'bubble'
+    ? bubbleBounds(state?.x ?? area.x + area.width - BUBBLE_SIZE - SCREEN_MARGIN, state?.y ?? area.y + Math.round(area.height * .36), area)
+    : markerBounds(bubbleMode, state?.y ?? area.y + Math.round(area.height * .36), area);
+  bubbleWindow = new BrowserWindow({ ...initialBounds, frame: false, transparent: true, backgroundColor: '#00000000', hasShadow: false, resizable: false, alwaysOnTop: true, skipTaskbar: true, webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false } });
+  bubbleWindow.loadFile(path.join(__dirname, 'bubble.html')); bubbleWindow.webContents.once('did-finish-load', () => bubbleWindow?.webContents.send('bubble:mode', bubbleMode));
+  bubbleWindow.on('closed', () => { stopBubbleDrag(); bubbleWindow = null; });
+}
+function stopBubbleDrag() {
+  if (bubbleDragInterval) clearInterval(bubbleDragInterval);
+  if (bubbleDragTimeout) clearTimeout(bubbleDragTimeout);
+  bubbleDragInterval = null; bubbleDragTimeout = null;
+}
+function startBubbleDrag(offset) {
+  if (!bubbleWindow || bubbleMode !== 'bubble') return false;
+  stopBubbleDrag(); bubbleDragStart = screen.getCursorScreenPoint(); bubbleDragOffset = offset;
+  bubbleDragInterval = setInterval(() => {
+    if (!bubbleWindow || bubbleWindow.isDestroyed()) return stopBubbleDrag();
+    const cursor = screen.getCursorScreenPoint(); bubbleWindow.setPosition(Math.round(cursor.x - bubbleDragOffset.x), Math.round(cursor.y - bubbleDragOffset.y));
+  }, 16);
+  bubbleDragTimeout = setTimeout(() => endBubbleDrag(), 10000);
+  return true;
+}
+async function endBubbleDrag() {
+  stopBubbleDrag(); if (!bubbleWindow || !bubbleDragStart) return false;
+  const cursor = screen.getCursorScreenPoint(); const moved = Math.hypot(cursor.x - bubbleDragStart.x, cursor.y - bubbleDragStart.y) > 4;
+  if (moved) {
+    const display = screen.getDisplayNearestPoint(cursor); const area = display.workArea;
+    const desired = bubbleBounds(cursor.x - bubbleDragOffset.x, cursor.y - bubbleDragOffset.y, area);
+    const leftDistance = Math.abs((cursor.x - bubbleDragOffset.x) - area.x);
+    const rightDistance = Math.abs(area.x + area.width - (cursor.x - bubbleDragOffset.x + BUBBLE_SIZE));
+    if (leftDistance <= EDGE_THRESHOLD) setBubbleMode('left', markerBounds('left', desired.y + (BUBBLE_SIZE - MARKER_HEIGHT) / 2, area));
+    else if (rightDistance <= EDGE_THRESHOLD) setBubbleMode('right', markerBounds('right', desired.y + (BUBBLE_SIZE - MARKER_HEIGHT) / 2, area));
+    else setBubbleMode('bubble', desired);
+    await saveBubbleState(display, bubbleWindow.getBounds());
+  }
+  bubbleDragStart = null; bubbleDragOffset = null; return moved;
+}
+async function expandBubble() {
+  if (!bubbleWindow || bubbleMode === 'bubble') return false;
+  const side = bubbleMode; const current = bubbleWindow.getBounds(); const display = screen.getDisplayMatching(current); const area = display.workArea;
+  const x = side === 'left' ? area.x + SCREEN_MARGIN : area.x + area.width - BUBBLE_SIZE - SCREEN_MARGIN;
+  const bounds = bubbleBounds(x, current.y - (BUBBLE_SIZE - MARKER_HEIGHT) / 2, area);
+  setBubbleMode('bubble', bounds); await saveBubbleState(display, bounds); return true;
 }
 function restoreMain() { if (!mainWindow) createMainWindow(); if (bubbleWindow) bubbleWindow.close(); mainWindow.show(); mainWindow.restore(); mainWindow.focus(); }
 app.whenReady().then(() => { createMainWindow(); app.on('activate', () => { if (!mainWindow) createMainWindow(); }); });
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
 ipcMain.handle('window:toggle-top', () => { const next = !mainWindow.isAlwaysOnTop(); mainWindow.setAlwaysOnTop(next); return next; });
-ipcMain.handle('window:minimize-bubble', () => { mainWindow.hide(); createBubble(); });
+ipcMain.handle('window:minimize-bubble', async () => { mainWindow.hide(); await createBubble(); });
 ipcMain.handle('window:restore', restoreMain);
 ipcMain.handle('window:force-close', () => { allowClose = true; mainWindow.close(); });
 ipcMain.handle('window:confirm-close', async (_event, language = 'zh') => {
   const en = language === 'en'; const result = await dialog.showMessageBox(mainWindow, { type: 'question', title: en ? 'Unsaved changes' : '未保存的修改', message: en ? 'Save changes before closing?' : '关闭应用前是否保存当前修改？', detail: en ? 'Unsaved text and display changes will be lost.' : '未保存的文字和显示设置将会丢失。', buttons: en ? ['Save', "Don't Save", 'Cancel'] : ['保存', '不保存', '取消'], defaultId: 0, cancelId: 2, noLink: true });
   return ['save', 'discard', 'cancel'][result.response];
 });
-ipcMain.handle('bubble:move', (_event, p) => { if (bubbleWindow) bubbleWindow.setPosition(Math.round(p.x), Math.round(p.y)); });
-ipcMain.handle('bubble:snap', snapBubble);
+ipcMain.handle('bubble:drag-start', (_event, offset) => startBubbleDrag(offset));
+ipcMain.handle('bubble:drag-end', () => endBubbleDrag());
+ipcMain.handle('bubble:get-mode', () => bubbleMode);
+ipcMain.handle('bubble:expand', () => expandBubble());
 async function writeNote(filePath, payload) {
   await fs.writeFile(filePath, payload.text, 'utf8'); await fs.writeFile(`${filePath}.edgenote.json`, JSON.stringify({ html: payload.html, settings: payload.settings || {} }, null, 2), 'utf8');
   await updateConfig({ paths: { notes: path.dirname(filePath) } }); return filePath;

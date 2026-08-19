@@ -4,7 +4,7 @@
 
 ## English
 
-EasyNote is a lightweight Windows desktop note app with always-on-top mode, local text storage, image insertion, customizable appearance, and an edge-docked floating bubble.
+EasyNote is a lightweight Windows desktop note app with always-on-top mode, local text storage, image insertion, customizable appearance, and a freely positioned floating bubble.
 
 ### Features
 
@@ -13,13 +13,13 @@ EasyNote is a lightweight Windows desktop note app with always-on-top mode, loca
 - Insert PNG, JPG, JPEG, GIF, WebP, and BMP images
 - Search note content without matching the search interface itself
 - Configure a global background or a background for the current note only
-- Adjust background opacity, font size, line spacing, and ruled lines
+- Adjust background opacity, font size, line spacing, word wrapping, and ruled lines
 - Choose font colors using RGB, a channel mixer, or indexed colors
 - Change selected text color from the editor context menu
 - Persist display settings and remember separate folders for notes, inserted images, and backgrounds
 - Switch between English and Chinese
-- Hide the toolbar or search bar and open built-in shortcut help
-- Minimize to a floating bubble that docks to either screen edge
+- Use a compact always-available toolbar; press `Ctrl+F` to reveal the normally hidden search bar
+- Minimize to a freely positioned floating bubble; move it near the left or right edge to collapse it into a small position marker
 - Prompt to save unsaved changes before closing
 
 ### Quick start
@@ -40,7 +40,7 @@ On Windows, you can also double-click `start-edge-note.bat` after dependencies a
 - **Save:** Choose a path the first time; later saves overwrite the same file directly.
 - **Save As:** Save the current note to a new path.
 - **Insert Image:** Insert a local image at the current cursor position.
-- **Settings:** Preview and apply appearance, language, and interface visibility settings globally or to the current note.
+- **Settings:** Preview and apply appearance, language, and word-wrap settings globally or to the current note.
 - **Right-click in the editor:** Apply a color to selected text.
 - **Help:** View keyboard shortcuts inside the app.
 
@@ -85,7 +85,7 @@ This project was designed, programmed, and documented with assistance from gener
 
 ## 中文
 
-贴边笔记是一款面向 Windows 的轻量桌面笔记应用，支持窗口置顶、本地文本保存、图片插入、个性化显示和屏幕边缘悬浮球。
+贴边笔记是一款面向 Windows 的轻量桌面笔记应用，支持窗口置顶、本地文本保存、图片插入、个性化显示和自由放置的悬浮球。
 
 ### 主要功能
 
@@ -94,13 +94,13 @@ This project was designed, programmed, and documented with assistance from gener
 - 支持插入 PNG、JPG、JPEG、GIF、WebP 和 BMP 图片
 - 只搜索笔记正文，不会错误识别搜索界面自身
 - 背景图片可设为全局默认，也可仅应用于当前笔记
-- 调整背景透明度、字号、行距和行间横线
+- 调整背景透明度、字号、行距、自动换行和行间横线
 - 通过 RGB、通道混合器或索引颜色选择字体颜色
 - 在编辑区右键修改选中文字的颜色
 - 持久化显示设置，并分别记忆笔记、插入图片和背景图片路径
 - 支持中文和 English 界面
-- 可隐藏功能栏或搜索栏，并提供内置快捷键帮助
-- 最小化为自动吸附屏幕边缘的悬浮球
+- 使用始终可用的紧凑功能栏；搜索栏常态隐藏，可按 `Ctrl+F` 呼出
+- 最小化为可自由放置的悬浮球；靠近屏幕左右边缘时会收起为小型位置标记
 - 关闭应用前提示保存尚未保存的修改
 
 ### 快速开始
@@ -121,7 +121,7 @@ npm start
 - **保存：** 首次保存时选择路径，之后直接覆盖原文件。
 - **另存为：** 将当前笔记保存到新路径。
 - **插入图片：** 在当前光标位置插入本地图片。
-- **设置：** 实时预览并将外观、语言和栏位显示设置应用到全局或当前笔记。
+- **设置：** 实时预览并将外观、语言和自动换行设置应用到全局或当前笔记。
 - **编辑区右键：** 修改选中文字的颜色。
 - **帮助：** 在应用内查看快捷键。
 

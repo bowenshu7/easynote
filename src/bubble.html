@@ -1,8 +1,9 @@
 <!doctype html><html><head><meta charset="UTF-8"><style>
-html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden;user-select:none}.bubble{width:56px;height:56px;margin:4px;border:1px solid #fff8;border-radius:19px;background:linear-gradient(145deg,#ffe18a,#ee963e);color:#4c2f12;font:800 23px system-ui;box-shadow:0 8px 24px #3b240f66;cursor:grab}.bubble:active{cursor:grabbing;transform:scale(.96)}
+html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden;user-select:none}.bubble{box-sizing:border-box;width:54px;height:54px;margin:2px;padding:0;border:1px solid #d88a2c;border-radius:18px;background:linear-gradient(145deg,#ffe18a,#ee963e);color:#4c2f12;font:800 23px system-ui;box-shadow:none;outline:none;cursor:grab}.bubble:active{cursor:grabbing;transform:scale(.97)}body.left .bubble,body.right .bubble{width:14px;height:42px;margin:0;border-color:#c9791f;background:#f2a13e;color:transparent;cursor:pointer;transform:none}body.left .bubble{border-left:0;border-radius:0 10px 10px 0}body.right .bubble{border-right:0;border-radius:10px 0 0 10px}body.left .bubble::after,body.right .bubble::after{content:'';display:block;width:3px;height:16px;margin:auto;border-radius:2px;background:#7b461b88}
 </style></head><body><button class="bubble" id="bubble" title="EasyNote">N</button><script>
-const b=document.getElementById('bubble');let down=false,moved=false,ox=0,oy=0;
-b.addEventListener('mousedown',e=>{down=true;moved=false;ox=e.clientX;oy=e.clientY});
-window.addEventListener('mousemove',e=>{if(!down)return;if(Math.abs(e.clientX-ox)>3||Math.abs(e.clientY-oy)>3)moved=true;window.edgeNote.bubbleMove({x:e.screenX-ox,y:e.screenY-oy})});
-window.addEventListener('mouseup',()=>{if(!down)return;down=false;if(moved)window.edgeNote.bubbleSnap();else window.edgeNote.restore()});
+const b=document.getElementById('bubble');let down=false,mode='bubble';
+function setMode(next){mode=next;document.body.className=next==='bubble'?'':next;b.title=next==='bubble'?'EasyNote':'展开悬浮球'}
+window.edgeNote.onBubbleMode(setMode);window.edgeNote.getBubbleMode().then(setMode);
+b.addEventListener('mousedown',async e=>{if(e.button!==0)return;down=true;if(mode==='bubble')await window.edgeNote.bubbleDragStart({x:e.clientX,y:e.clientY})});
+window.addEventListener('mouseup',async()=>{if(!down)return;down=false;if(mode!=='bubble'){await window.edgeNote.expandBubble();return}const moved=await window.edgeNote.bubbleDragEnd();if(!moved)window.edgeNote.restore()});
 </script></body></html>
