@@ -1,3 +1,5 @@
 node_modules/
 dist/
+release-build-*/
+EasyNote-v*-win-*.zip
 *.edgenote.json

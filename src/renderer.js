@@ -1,173 +1,59 @@
 const $ = id => document.getElementById(id);
-const editor = $('editor');
-const editorShell = $('editorShell');
-const status = $('status');
-const count = $('count');
-const dirtyMark = $('dirty');
-const topBtn = $('topBtn');
-const searchInput = $('searchInput');
-const searchResult = $('searchResult');
-const modal = $('settingsModal');
-const preview = $('settingsPreview');
-let currentPath = '';
-let dirty = false;
-let globalSettings = { backgroundImage: '', backgroundOpacity: 18 };
-let noteSettings = defaultNoteSettings();
-let draftBackground = '';
-
-function defaultNoteSettings() {
-  return { fontSize: 17, lineHeight: 1.8, ruledLines: false, backgroundScope: 'global', backgroundImage: '', backgroundOpacity: 18 };
-}
-function clamp(value, min, max, fallback) {
-  const number = Number(value);
-  return Number.isFinite(number) ? Math.min(max, Math.max(min, number)) : fallback;
-}
-function normalizeNoteSettings(settings = {}) {
-  const oldLocalBackground = !settings.backgroundScope && Boolean(settings.backgroundImage);
-  return {
-    fontSize: clamp(settings.fontSize, 10, 48, 17),
-    lineHeight: clamp(settings.lineHeight, 1, 3, 1.8),
-    ruledLines: Boolean(settings.ruledLines),
-    backgroundScope: settings.backgroundScope || (oldLocalBackground ? 'local' : 'global'),
-    backgroundImage: settings.backgroundImage || '',
-    backgroundOpacity: clamp(settings.backgroundOpacity, 0, 100, 18)
-  };
-}
-function normalizeGlobalSettings(settings = {}) {
-  return { backgroundImage: settings.backgroundImage || '', backgroundOpacity: clamp(settings.backgroundOpacity, 0, 100, 18) };
-}
-function effectiveBackground(settings = noteSettings) {
-  return settings.backgroundScope === 'local'
-    ? { image: settings.backgroundImage, opacity: settings.backgroundOpacity }
-    : { image: globalSettings.backgroundImage, opacity: globalSettings.backgroundOpacity };
-}
-function cssImage(image) { return image ? `url("${image.replace(/"/g, '%22')}")` : 'none'; }
-function applyNoteSettings() {
-  const background = effectiveBackground();
-  editor.style.setProperty('--font-size', `${noteSettings.fontSize}px`);
-  editor.style.setProperty('--line-height', noteSettings.lineHeight);
-  editor.classList.toggle('ruled', noteSettings.ruledLines);
-  editorShell.style.setProperty('--background-opacity', background.opacity / 100);
-  editorShell.style.setProperty('--note-background', cssImage(background.image));
-}
-function markDirty(value = true) { dirty = value; dirtyMark.textContent = value ? '•' : ''; }
-function updateCount() { count.textContent = `${editor.innerText.trim().length} 字`; }
-function notePayload() { return { currentPath, text: editor.innerText, html: editor.innerHTML, settings: noteSettings }; }
-function finishSave(saved) {
-  if (!saved) return;
-  currentPath = saved; status.textContent = saved.split(/[\\/]/).pop(); markDirty(false);
-}
-async function saveNote() { finishSave(await window.edgeNote.save(notePayload())); }
-async function saveNoteAs() { finishSave(await window.edgeNote.saveAs(notePayload())); }
-function runSearch(forward = true) {
-  const text = searchInput.value.trim();
-  if (!text) { window.edgeNote.stopSearch(); searchResult.textContent = ''; return; }
-  window.edgeNote.search(text, forward);
-}
-
-function selectedScope() { return document.querySelector('input[name="backgroundScope"]:checked').value; }
-function setScope(scope) { document.querySelector(`input[name="backgroundScope"][value="${scope}"]`).checked = true; }
-function loadModalValues() {
-  setScope(noteSettings.backgroundScope);
-  const background = effectiveBackground();
-  draftBackground = background.image;
-  $('backgroundOpacity').value = background.opacity;
-  $('opacityValue').textContent = `${background.opacity}%`;
-  $('fontSize').value = noteSettings.fontSize;
-  $('lineHeight').value = noteSettings.lineHeight;
-  $('ruledLines').checked = noteSettings.ruledLines;
-  updatePreview();
-}
-function updatePreview() {
-  const opacity = clamp($('backgroundOpacity').value, 0, 100, 18);
-  preview.style.setProperty('--preview-background', cssImage(draftBackground));
-  preview.style.setProperty('--preview-opacity', opacity / 100);
-  preview.style.setProperty('--preview-font-size', `${clamp($('fontSize').value, 10, 48, 17)}px`);
-  preview.style.setProperty('--preview-line-height', clamp($('lineHeight').value, 1, 3, 1.8));
-  preview.classList.toggle('ruled', $('ruledLines').checked);
-  $('opacityValue').textContent = `${opacity}%`;
-}
-function showSettings() { loadModalValues(); modal.hidden = false; }
-function hideSettings() { modal.hidden = true; }
-
-editor.addEventListener('input', () => { markDirty(); updateCount(); });
-$('saveBtn').onclick = saveNote;
-$('saveAsBtn').onclick = saveNoteAs;
-$('openBtn').onclick = async () => {
-  const note = await window.edgeNote.open();
-  if (!note) return;
-  currentPath = note.filePath;
-  if (note.html) editor.innerHTML = note.html; else editor.innerText = note.text;
-  noteSettings = normalizeNoteSettings(note.settings);
-  applyNoteSettings();
-  status.textContent = currentPath.split(/[\\/]/).pop(); markDirty(false); updateCount();
+const editor = $('editor'), editorShell = $('editorShell'), modal = $('settingsModal'), helpModal = $('helpModal'), preview = $('settingsPreview');
+let currentPath = '', dirty = false, globalSettings = defaults(), noteSettings = { useGlobal: true }, draftBackground = '', draftColor = '#302c26';
+let searchQuery = '', searchRanges = [], searchIndex = -1, savedRange = null, closing = false;
+const I18N = {
+  zh:{appName:'贴边笔记',new:'新建',open:'打开',save:'保存',saveAs:'另存为',insertImage:'插入图片',settings:'⚙ 设置',help:'? 帮助',search:'搜索笔记…',placeholder:'写点什么吧……',displaySettings:'显示设置',applyScope:'应用范围',globalDefault:'全局默认',currentNote:'当前笔记',background:'背景图片',choose:'选择',clear:'清除',opacity:'背景透明度',fontSize:'字号',lineHeight:'行距',ruledLines:'行间横线',colorMethod:'颜色选择方式',mixer:'通道混合器',indexed:'索引颜色',fontColor:'字体颜色',hideToolbar:'隐藏功能栏',hideSearch:'隐藏搜索栏',language:'语言',preview:'效果预览',preview1:'在这里预览笔记背景与排版。',preview2:'调整选项后会立即更新。',cancel:'取消',apply:'应用设置',helpTitle:'快捷键帮助',hSave:'保存',hSaveAs:'另存为',hSearch:'显示并聚焦搜索',hPin:'切换窗口置顶',hEsc:'关闭弹窗',rightClick:'编辑区右键',hColor:'调整选中文字颜色',textColor:'文字颜色',moreColors:'更多颜色…',pin:'切换置顶 (Ctrl+T)',minimize:'收起为悬浮窗',close:'关闭',noResult:'无结果',chars:'字',untitled:'未命名.txt',unsaved:'当前内容尚未保存，确定新建吗？'},
+  en:{appName:'EasyNote',new:'New',open:'Open',save:'Save',saveAs:'Save As',insertImage:'Insert Image',settings:'⚙ Settings',help:'? Help',search:'Search note…',placeholder:'Write something…',displaySettings:'Display Settings',applyScope:'Apply to',globalDefault:'Global default',currentNote:'Current note',background:'Background',choose:'Choose',clear:'Clear',opacity:'Background opacity',fontSize:'Font size',lineHeight:'Line spacing',ruledLines:'Ruled lines',colorMethod:'Color method',mixer:'Channel mixer',indexed:'Indexed colors',fontColor:'Font color',hideToolbar:'Hide toolbar',hideSearch:'Hide search bar',language:'Language',preview:'Preview',preview1:'Preview note background and typography.',preview2:'Changes appear here immediately.',cancel:'Cancel',apply:'Apply',helpTitle:'Keyboard Shortcuts',hSave:'Save',hSaveAs:'Save as',hSearch:'Show and focus search',hPin:'Toggle always on top',hEsc:'Close dialog',rightClick:'Editor right-click',hColor:'Change selected text color',textColor:'Text color',moreColors:'More colors…',pin:'Toggle always on top (Ctrl+T)',minimize:'Minimize to floating bubble',close:'Close',noResult:'No results',chars:'chars',untitled:'Untitled.txt',unsaved:'Current changes are not saved. Create a new note anyway?'}
 };
-$('newBtn').onclick = () => {
-  if (dirty && !confirm('当前内容尚未保存，确定新建吗？')) return;
-  currentPath = ''; editor.innerHTML = ''; noteSettings = defaultNoteSettings(); applyNoteSettings();
-  status.textContent = '未命名.txt'; markDirty(false); updateCount(); editor.focus();
-};
-$('imageBtn').onclick = async () => {
-  const src = await window.edgeNote.chooseImage();
-  if (!src) return;
-  editor.focus(); document.execCommand('insertHTML', false, `<img src="${src}" alt="插入的图片"><div><br></div>`); markDirty(); updateCount();
-};
-topBtn.onclick = async () => {
-  const topmost = await window.edgeNote.toggleTop();
-  topBtn.classList.toggle('active', topmost); topBtn.setAttribute('aria-pressed', String(topmost));
-  topBtn.title = topmost ? '置顶已开启，点击取消 (Ctrl+T)' : '置顶已关闭，点击开启 (Ctrl+T)';
-};
+function defaults(){return{backgroundImage:'',backgroundOpacity:18,fontSize:17,lineHeight:1.8,ruledLines:false,fontColor:'#302c26',hideToolbar:false,hideSearch:false,language:'zh'};}
+function clamp(v,min,max,f){v=Number(v);return Number.isFinite(v)?Math.min(max,Math.max(min,v)):f;}
+function normalize(s={}){const d=defaults();return{...d,...s,backgroundOpacity:clamp(s.backgroundOpacity,0,100,d.backgroundOpacity),fontSize:clamp(s.fontSize,10,48,d.fontSize),lineHeight:clamp(s.lineHeight,1,3,d.lineHeight),fontColor:/^#[0-9a-f]{6}$/i.test(s.fontColor||'')?s.fontColor:d.fontColor,language:s.language==='en'?'en':'zh'};}
+function activeSettings(){return noteSettings.useGlobal===false?normalize(noteSettings):globalSettings;}
+function lang(){return globalSettings.language||'zh';} function t(k){return I18N[lang()][k]||k;}
+function cssImage(v){return v?`url("${v.replace(/"/g,'%22')}")`:'none';}
+function applySettings(){const s=activeSettings();editor.style.setProperty('--font-size',`${s.fontSize}px`);editor.style.setProperty('--line-height',s.lineHeight);editor.style.setProperty('--font-color',s.fontColor);editor.classList.toggle('ruled',s.ruledLines);editorShell.style.setProperty('--background-opacity',s.backgroundOpacity/100);editorShell.style.setProperty('--note-background',cssImage(s.backgroundImage));document.body.classList.toggle('hide-toolbar',s.hideToolbar);document.body.classList.toggle('hide-search',s.hideSearch);applyLanguage();}
+function applyLanguage(){document.documentElement.lang=lang()==='en'?'en':'zh-CN';document.querySelectorAll('[data-i18n]').forEach(el=>el.textContent=t(el.dataset.i18n));document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>el.setAttribute('placeholder',t(el.dataset.i18nPlaceholder)));document.querySelectorAll('[data-i18n-title]').forEach(el=>el.title=t(el.dataset.i18nTitle));if(!currentPath)$('status').textContent=t('untitled');updateCount();}
+function markDirty(v=true){dirty=v;$('dirty').textContent=v?'•':'';} function updateCount(){$('count').textContent=`${editor.innerText.trim().length} ${t('chars')}`;}
+function payload(){return{currentPath,text:editor.innerText,html:editor.innerHTML,settings:noteSettings,language:lang()};}
+function finishSave(path){if(!path)return false;currentPath=path;$('status').textContent=path.split(/[\\/]/).pop();markDirty(false);return true;}
+async function save(){return finishSave(await window.edgeNote.save(payload()));} async function saveAs(){return finishSave(await window.edgeNote.saveAs(payload()));}
 
-$('settingsBtn').onclick = showSettings;
-$('settingsClose').onclick = hideSettings;
-$('settingsCancel').onclick = hideSettings;
-modal.addEventListener('click', event => { if (event.target === modal) hideSettings(); });
-document.querySelectorAll('input[name="backgroundScope"]').forEach(radio => radio.onchange = () => {
-  const source = selectedScope() === 'global' ? globalSettings : noteSettings;
-  draftBackground = source.backgroundImage || '';
-  $('backgroundOpacity').value = source.backgroundOpacity ?? 18;
-  updatePreview();
-});
-$('chooseBackgroundBtn').onclick = async () => { const src = await window.edgeNote.chooseBackground(); if (src) { draftBackground = src; updatePreview(); } };
-$('clearBackgroundBtn').onclick = () => { draftBackground = ''; updatePreview(); };
-['backgroundOpacity', 'fontSize', 'lineHeight', 'ruledLines'].forEach(id => $(id).addEventListener('input', updatePreview));
-$('settingsApply').onclick = async () => {
-  const scope = selectedScope();
-  const opacity = clamp($('backgroundOpacity').value, 0, 100, 18);
-  if (scope === 'global') {
-    globalSettings = { backgroundImage: draftBackground, backgroundOpacity: opacity };
-    await window.edgeNote.saveGlobalSettings(globalSettings);
-  }
-  noteSettings = {
-    fontSize: clamp($('fontSize').value, 10, 48, 17),
-    lineHeight: clamp($('lineHeight').value, 1, 3, 1.8),
-    ruledLines: $('ruledLines').checked,
-    backgroundScope: scope,
-    backgroundImage: scope === 'local' ? draftBackground : noteSettings.backgroundImage,
-    backgroundOpacity: scope === 'local' ? opacity : noteSettings.backgroundOpacity
-  };
-  applyNoteSettings(); markDirty(); hideSettings();
-};
+function textSearch(query,forward=true){query=query.trim().toLocaleLowerCase();if(!query){searchQuery='';searchRanges=[];searchIndex=-1;$('searchResult').textContent='';window.getSelection().removeAllRanges();return;}if(query!==searchQuery){searchQuery=query;searchRanges=[];const walker=document.createTreeWalker(editor,NodeFilter.SHOW_TEXT);let node;while(node=walker.nextNode()){const text=node.nodeValue.toLocaleLowerCase();let pos=0;while((pos=text.indexOf(query,pos))!==-1){const r=document.createRange();r.setStart(node,pos);r.setEnd(node,pos+query.length);searchRanges.push(r);pos+=query.length||1;}}searchIndex=forward?0:searchRanges.length-1;}else if(searchRanges.length){searchIndex=(searchIndex+(forward?1:-1)+searchRanges.length)%searchRanges.length;}if(!searchRanges.length){$('searchResult').textContent=t('noResult');return;}const r=searchRanges[searchIndex];const sel=window.getSelection();sel.removeAllRanges();sel.addRange(r);r.startContainer.parentElement?.scrollIntoView({block:'center'});$('searchResult').textContent=`${searchIndex+1}/${searchRanges.length}`;}
 
-searchInput.addEventListener('input', () => runSearch(true));
-searchInput.addEventListener('keydown', event => {
-  if (event.key === 'Enter') { event.preventDefault(); runSearch(!event.shiftKey); }
-  if (event.key === 'Escape') $('searchClose').click();
-});
-$('searchPrev').onclick = () => runSearch(false);
-$('searchNext').onclick = () => runSearch(true);
-$('searchClose').onclick = () => { searchInput.value = ''; searchResult.textContent = ''; window.edgeNote.stopSearch(); editor.focus(); };
-window.edgeNote.onSearchResult(result => { searchResult.textContent = result.matches ? `${result.activeMatchOrdinal}/${result.matches}` : '无结果'; });
-$('minBtn').onclick = () => window.edgeNote.minimizeBubble();
-$('closeBtn').onclick = () => window.edgeNote.close();
-document.addEventListener('keydown', event => {
-  if (event.key === 'Escape' && !modal.hidden) hideSettings();
-  if (event.ctrlKey && event.key.toLowerCase() === 's') { event.preventDefault(); if (event.shiftKey) saveNoteAs(); else saveNote(); }
-  if (event.ctrlKey && event.key.toLowerCase() === 't') { event.preventDefault(); topBtn.click(); }
-  if (event.ctrlKey && event.key.toLowerCase() === 'f') { event.preventDefault(); searchInput.focus(); searchInput.select(); }
-});
+function rgbToHex(r,g,b){return'#'+[r,g,b].map(v=>clamp(v,0,255,0).toString(16).padStart(2,'0')).join('');}
+function hexToRgb(hex){return[parseInt(hex.slice(1,3),16),parseInt(hex.slice(3,5),16),parseInt(hex.slice(5,7),16)];}
+function hslToHex(h,s,l){s/=100;l/=100;const k=n=>(n+h/30)%12,a=s*Math.min(l,1-l),f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));return rgbToHex(Math.round(255*f(0)),Math.round(255*f(8)),Math.round(255*f(4)));}
+function setDraftColor(color){draftColor=color.toLowerCase();const [r,g,b]=hexToRgb(draftColor);$('red').value=r;$('green').value=g;$('blue').value=b;$('colorSwatch').style.background=draftColor;$('colorValue').textContent=draftColor;updatePreview();}
+function readModal(){return{backgroundImage:draftBackground,backgroundOpacity:clamp($('backgroundOpacity').value,0,100,18),fontSize:clamp($('fontSize').value,10,48,17),lineHeight:clamp($('lineHeight').value,1,3,1.8),ruledLines:$('ruledLines').checked,fontColor:draftColor,hideToolbar:$('hideToolbar').checked,hideSearch:$('hideSearch').checked,language:$('language').value};}
+function loadModal(){const s=document.querySelector('input[name="settingsScope"]:checked').value==='local'&&noteSettings.useGlobal===false?normalize(noteSettings):globalSettings;draftBackground=s.backgroundImage;$('backgroundOpacity').value=s.backgroundOpacity;$('fontSize').value=s.fontSize;$('lineHeight').value=s.lineHeight;$('ruledLines').checked=s.ruledLines;$('hideToolbar').checked=s.hideToolbar;$('hideSearch').checked=s.hideSearch;$('language').value=globalSettings.language;setDraftColor(s.fontColor);updatePreview();}
+function updatePreview(){const s=readModal();$('opacityValue').textContent=`${s.backgroundOpacity}%`;preview.style.setProperty('--preview-background',cssImage(s.backgroundImage));preview.style.setProperty('--preview-opacity',s.backgroundOpacity/100);preview.style.setProperty('--preview-font-size',`${s.fontSize}px`);preview.style.setProperty('--preview-line-height',s.lineHeight);preview.style.setProperty('--preview-color',s.fontColor);preview.classList.toggle('ruled',s.ruledLines);}
+function showSettings(){document.querySelector(`input[name="settingsScope"][value="${noteSettings.useGlobal===false?'local':'global'}"]`).checked=true;loadModal();modal.hidden=false;} function closeModals(){modal.hidden=true;helpModal.hidden=true;}
+function applyColorToSavedRange(color){if(!savedRange)return;const sel=window.getSelection();sel.removeAllRanges();sel.addRange(savedRange);document.execCommand('foreColor',false,color);savedRange=null;markDirty();}
 
-(async () => {
-  globalSettings = normalizeGlobalSettings(await window.edgeNote.getGlobalSettings());
-  applyNoteSettings(); updateCount();
-})();
+editor.addEventListener('input',()=>{markDirty();updateCount();searchQuery='';});
+$('newBtn').onclick=()=>{if(dirty&&!confirm(t('unsaved')))return;currentPath='';editor.innerHTML='';noteSettings={useGlobal:true};applySettings();$('status').textContent=t('untitled');markDirty(false);updateCount();editor.focus();};
+$('openBtn').onclick=async()=>{const n=await window.edgeNote.open(lang());if(!n)return;currentPath=n.filePath;n.html?editor.innerHTML=n.html:editor.innerText=n.text;noteSettings=Object.keys(n.settings||{}).length?{...normalize(n.settings),useGlobal:n.settings.useGlobal??false}:{useGlobal:true};applySettings();$('status').textContent=currentPath.split(/[\\/]/).pop();markDirty(false);updateCount();};
+$('saveBtn').onclick=save;$('saveAsBtn').onclick=saveAs;
+$('imageBtn').onclick=async()=>{const src=await window.edgeNote.chooseImage(lang());if(!src)return;editor.focus();document.execCommand('insertHTML',false,`<img src="${src}" alt="image"><div><br></div>`);markDirty();};
+$('topBtn').onclick=async()=>{const on=await window.edgeNote.toggleTop();$('topBtn').classList.toggle('active',on);$('topBtn').setAttribute('aria-pressed',on);};
+$('minBtn').onclick=()=>window.edgeNote.minimizeBubble();
+async function requestClose(){if(closing)return;if(!dirty){closing=true;return window.edgeNote.forceClose();}const choice=await window.edgeNote.confirmClose(lang());if(choice==='cancel')return;if(choice==='save'&&!await save())return;closing=true;window.edgeNote.forceClose();}
+$('closeBtn').onclick=requestClose;window.edgeNote.onCloseRequested(requestClose);
+
+$('settingsBtn').onclick=showSettings;$('settingsClose').onclick=closeModals;$('settingsCancel').onclick=closeModals;$('helpBtn').onclick=()=>helpModal.hidden=false;$('helpClose').onclick=closeModals;
+document.querySelectorAll('input[name="settingsScope"]').forEach(r=>r.onchange=loadModal);
+$('chooseBackgroundBtn').onclick=async()=>{const src=await window.edgeNote.chooseBackground(lang());if(src){draftBackground=src;updatePreview();}};$('clearBackgroundBtn').onclick=()=>{draftBackground='';updatePreview();};
+['backgroundOpacity','fontSize','lineHeight','ruledLines','hideToolbar','hideSearch','language'].forEach(id=>$(id).addEventListener('input',updatePreview));
+$('colorMethod').onchange=()=>{['rgb','mixer','indexed'].forEach(n=>$(`${n}Panel`).hidden=$('colorMethod').value!==n);};
+['red','green','blue'].forEach(id=>$(id).oninput=()=>setDraftColor(rgbToHex($('red').value,$('green').value,$('blue').value)));
+['hue','saturation','lightness'].forEach(id=>$(id).oninput=()=>setDraftColor(hslToHex($('hue').value,$('saturation').value,$('lightness').value)));
+document.querySelectorAll('.palette [data-color]').forEach(b=>{b.style.background=b.dataset.color;b.onclick=()=>{if(b.closest('#colorMenu')){applyColorToSavedRange(b.dataset.color);$('colorMenu').hidden=true;}else setDraftColor(b.dataset.color);};});
+$('settingsApply').onclick=async()=>{const scope=document.querySelector('input[name="settingsScope"]:checked').value,s=readModal();globalSettings.language=s.language;if(scope==='global'){globalSettings=normalize(s);noteSettings={useGlobal:true};}else{noteSettings={...normalize(s),useGlobal:false};globalSettings.hideToolbar=s.hideToolbar;globalSettings.hideSearch=s.hideSearch;}await window.edgeNote.saveGlobalSettings(globalSettings);applySettings();if(savedRange)applyColorToSavedRange(s.fontColor);markDirty();closeModals();};
+
+editor.addEventListener('contextmenu',e=>{e.preventDefault();const sel=window.getSelection();savedRange=sel.rangeCount?sel.getRangeAt(0).cloneRange():null;const menu=$('colorMenu');menu.style.left=`${Math.min(e.clientX,innerWidth-190)}px`;menu.style.top=`${Math.min(e.clientY,innerHeight-100)}px`;menu.hidden=false;});
+$('moreColors').onclick=()=>{$('colorMenu').hidden=true;showSettings();};document.addEventListener('click',e=>{if(!e.target.closest('#colorMenu')&&!e.target.closest('#editor'))$('colorMenu').hidden=true;});
+$('searchInput').oninput=()=>textSearch($('searchInput').value,true);$('searchNext').onclick=()=>textSearch($('searchInput').value,true);$('searchPrev').onclick=()=>textSearch($('searchInput').value,false);$('searchClose').onclick=()=>{$('searchInput').value='';textSearch('');};
+$('searchInput').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();textSearch($('searchInput').value,!e.shiftKey);}if(e.key==='Escape')$('searchClose').click();};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModals();$('colorMenu').hidden=true;}if(e.ctrlKey&&e.key.toLowerCase()==='s'){e.preventDefault();e.shiftKey?saveAs():save();}if(e.ctrlKey&&e.key.toLowerCase()==='t'){e.preventDefault();$('topBtn').click();}if(e.ctrlKey&&e.key.toLowerCase()==='f'){e.preventDefault();document.body.classList.remove('hide-search');$('searchInput').focus();$('searchInput').select();}});
+(async()=>{globalSettings=normalize(await window.edgeNote.getGlobalSettings());applySettings();updateCount();})();

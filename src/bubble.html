@@ -1,5 +1,8 @@
 <!doctype html><html><head><meta charset="UTF-8"><style>
-html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden}.bubble{-webkit-app-region:drag;width:54px;height:54px;margin:4px;border:0;border-radius:17px;background:linear-gradient(145deg,#ffd86b,#f29d49);color:#4c2f12;font:700 23px system-ui;box-shadow:0 7px 20px #5d3c1c55;cursor:grab}.bubble:active{cursor:grabbing;transform:scale(.96)}
-</style></head><body><button class="bubble" id="bubble" title="点击恢复笔记">N</button><script>
-let moved=false,sx=0,sy=0;const b=document.getElementById('bubble');b.addEventListener('mousedown',e=>{moved=false;sx=e.screenX;sy=e.screenY});b.addEventListener('mousemove',e=>{if(Math.abs(e.screenX-sx)>4||Math.abs(e.screenY-sy)>4)moved=true});b.addEventListener('click',()=>{if(!moved)window.edgeNote.restore()});
+html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden;user-select:none}.bubble{width:56px;height:56px;margin:4px;border:1px solid #fff8;border-radius:19px;background:linear-gradient(145deg,#ffe18a,#ee963e);color:#4c2f12;font:800 23px system-ui;box-shadow:0 8px 24px #3b240f66;cursor:grab}.bubble:active{cursor:grabbing;transform:scale(.96)}
+</style></head><body><button class="bubble" id="bubble" title="EasyNote">N</button><script>
+const b=document.getElementById('bubble');let down=false,moved=false,ox=0,oy=0;
+b.addEventListener('mousedown',e=>{down=true;moved=false;ox=e.clientX;oy=e.clientY});
+window.addEventListener('mousemove',e=>{if(!down)return;if(Math.abs(e.clientX-ox)>3||Math.abs(e.clientY-oy)>3)moved=true;window.edgeNote.bubbleMove({x:e.screenX-ox,y:e.screenY-oy})});
+window.addEventListener('mouseup',()=>{if(!down)return;down=false;if(moved)window.edgeNote.bubbleSnap();else window.edgeNote.restore()});
 </script></body></html>

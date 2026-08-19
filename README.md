@@ -1,93 +1,142 @@
-# 贴边笔记
+# EasyNote
 
-贴边笔记是一款面向 Windows 的轻量桌面笔记应用，支持窗口置顶、本地文本保存、图片插入、个性化背景和屏幕边缘悬浮。
+[English](#english) · [中文](#中文)
 
-## 主要功能
+## English
 
-- 一键切换窗口置顶，开启后图钉会以黄色状态显示
-- 笔记正文以标准 UTF-8 `.txt` 文件保存
-- 支持插入 PNG、JPG、JPEG、GIF、WebP 和 BMP 图片
-- 搜索笔记内容，并在多个匹配结果间切换
-- 自定义背景图片及其透明度
-- 背景支持“全局默认”和“仅当前笔记”两种范围
-- 在设置窗口中实时预览背景、字号、行距和行间横线
-- 已打开的笔记直接覆盖保存，也可另存为新文件
-- 收起后显示为悬浮球，拖动松开会自动吸附屏幕左右边缘
+EasyNote is a lightweight Windows desktop note app with always-on-top mode, local text storage, image insertion, customizable appearance, and an edge-docked floating bubble.
 
-## 快速开始
+### Features
 
-进入项目目录后，双击：
+- Toggle always-on-top with a polished visual pin indicator
+- Save note text as standard UTF-8 `.txt` files
+- Insert PNG, JPG, JPEG, GIF, WebP, and BMP images
+- Search note content without matching the search interface itself
+- Configure a global background or a background for the current note only
+- Adjust background opacity, font size, line spacing, and ruled lines
+- Choose font colors using RGB, a channel mixer, or indexed colors
+- Change selected text color from the editor context menu
+- Persist display settings and remember separate folders for notes, inserted images, and backgrounds
+- Switch between English and Chinese
+- Hide the toolbar or search bar and open built-in shortcut help
+- Minimize to a floating bubble that docks to either screen edge
+- Prompt to save unsaved changes before closing
 
-```text
-start-edge-note.bat
-```
+### Quick start
 
-也可以在 PowerShell 中运行：
-
-```powershell
-npm start
-```
-
-如果尚未安装依赖，请先运行：
+Install dependencies and start the app:
 
 ```powershell
 npm install
+npm start
 ```
 
-## 使用方法
+On Windows, you can also double-click `start-edge-note.bat` after dependencies are installed.
 
-### 笔记操作
+### Usage
 
-- **新建**：清空编辑区并创建新笔记；存在未保存内容时会请求确认。
-- **打开**：选择本地 `.txt` 文件。若旁边存在对应的辅助文件，图片和显示设置会一起恢复。
-- **保存**：首次保存时选择路径；打开或保存过的文件会直接覆盖，不再重复弹出路径选择窗口。
-- **另存为**：选择新路径并保留原文件。
-- **插入图片**：在当前光标位置插入本地图片。
+- **New:** Start a blank note. EasyNote asks for confirmation when the current note has unsaved changes.
+- **Open:** Open a local `.txt` note and restore its companion metadata when available.
+- **Save:** Choose a path the first time; later saves overwrite the same file directly.
+- **Save As:** Save the current note to a new path.
+- **Insert Image:** Insert a local image at the current cursor position.
+- **Settings:** Preview and apply appearance, language, and interface visibility settings globally or to the current note.
+- **Right-click in the editor:** Apply a color to selected text.
+- **Help:** View keyboard shortcuts inside the app.
 
-### 搜索
+### Keyboard shortcuts
 
-- 按 `Ctrl+F` 将焦点移到搜索框。
-- 输入内容后会自动搜索。
-- 按 `Enter` 或点击向下按钮跳到下一个结果。
-- 按 `Shift+Enter` 或点击向上按钮跳到上一个结果。
-- 按 `Esc` 或点击搜索框旁的 `×` 清除搜索。
+| Shortcut | Action |
+| --- | --- |
+| `Ctrl+S` | Save |
+| `Ctrl+Shift+S` | Save As |
+| `Ctrl+F` | Show and focus search |
+| `Enter` / `Shift+Enter` | Next / previous search result |
+| `Ctrl+T` | Toggle always-on-top |
+| `Esc` | Close a dialog |
 
-### 显示设置
+### Note files
 
-点击工具栏中的“设置”打开集中设置窗口，可实时预览：
+Each note can use two files:
 
-- 背景图片
-- 背景透明度（0%–100%）
-- 字体大小
-- 行间距
-- 行与行之间的横线
+```text
+My Note.txt
+My Note.txt.edgenote.json
+```
 
-背景应用范围：
+The `.txt` file contains plain text. The `.edgenote.json` companion stores image placement, rich formatting, and per-note display settings. Keep both files together when moving or backing up a formatted note.
 
-- **全局默认**：保存为应用默认背景，新建笔记以及使用全局设置的笔记会采用该背景。
-- **仅当前笔记**：背景和透明度只随当前笔记保存，不影响其他笔记。
+Global settings and recently used folders are stored in Electron's local application-data directory and are not written into note text files.
 
-### 置顶与悬浮球
+### Development
 
-- 点击右上角图钉或按 `Ctrl+T` 切换置顶。
-- 图钉变为黄色并显示“置顶”时，表示置顶已开启。
-- 点击右上角 `—`，主窗口会收起为悬浮球。
-- 拖动悬浮球并松开，它会自动吸附到当前屏幕的左侧或右侧。
-- 单击悬浮球恢复主窗口。
+Requirements: Windows 10/11, Node.js 20 or newer, and npm.
 
-## 快捷键
+```powershell
+npm run check
+npm run dist
+```
+
+`npm run check` validates the JavaScript sources. `npm run dist` builds the Windows portable target into `dist`.
+
+### AI-assisted development
+
+This project was designed, programmed, and documented with assistance from generative AI tools. If you find a problem while using EasyNote, feedback through a GitHub Issue is welcome.
+
+## 中文
+
+贴边笔记是一款面向 Windows 的轻量桌面笔记应用，支持窗口置顶、本地文本保存、图片插入、个性化显示和屏幕边缘悬浮球。
+
+### 主要功能
+
+- 一键切换窗口置顶，并通过美化后的图钉显示状态
+- 笔记正文保存为标准 UTF-8 `.txt` 文件
+- 支持插入 PNG、JPG、JPEG、GIF、WebP 和 BMP 图片
+- 只搜索笔记正文，不会错误识别搜索界面自身
+- 背景图片可设为全局默认，也可仅应用于当前笔记
+- 调整背景透明度、字号、行距和行间横线
+- 通过 RGB、通道混合器或索引颜色选择字体颜色
+- 在编辑区右键修改选中文字的颜色
+- 持久化显示设置，并分别记忆笔记、插入图片和背景图片路径
+- 支持中文和 English 界面
+- 可隐藏功能栏或搜索栏，并提供内置快捷键帮助
+- 最小化为自动吸附屏幕边缘的悬浮球
+- 关闭应用前提示保存尚未保存的修改
+
+### 快速开始
+
+安装依赖并启动：
+
+```powershell
+npm install
+npm start
+```
+
+安装依赖后，也可以在 Windows 中双击 `start-edge-note.bat`。
+
+### 使用方法
+
+- **新建：** 创建空白笔记；当前内容未保存时会请求确认。
+- **打开：** 打开本地 `.txt` 文件；存在辅助文件时会恢复图片、格式和显示设置。
+- **保存：** 首次保存时选择路径，之后直接覆盖原文件。
+- **另存为：** 将当前笔记保存到新路径。
+- **插入图片：** 在当前光标位置插入本地图片。
+- **设置：** 实时预览并将外观、语言和栏位显示设置应用到全局或当前笔记。
+- **编辑区右键：** 修改选中文字的颜色。
+- **帮助：** 在应用内查看快捷键。
+
+### 快捷键
 
 | 快捷键 | 功能 |
 | --- | --- |
-| `Ctrl+S` | 保存；已有路径时直接覆盖 |
+| `Ctrl+S` | 保存 |
 | `Ctrl+Shift+S` | 另存为 |
-| `Ctrl+F` | 搜索 |
-| `Enter` | 下一个搜索结果 |
-| `Shift+Enter` | 上一个搜索结果 |
+| `Ctrl+F` | 显示并聚焦搜索 |
+| `Enter` / `Shift+Enter` | 下一个／上一个搜索结果 |
 | `Ctrl+T` | 切换窗口置顶 |
-| `Esc` | 关闭设置窗口或清除搜索 |
+| `Esc` | 关闭弹窗 |
 
-## 文件说明
+### 笔记文件
 
 每篇笔记最多包含两个文件：
 
@@ -96,57 +145,26 @@ npm install
 我的笔记.txt.edgenote.json
 ```
 
-- `.txt` 保存纯文字，可使用任意文本编辑器打开。
-- `.edgenote.json` 保存图片位置、排版和当前笔记的显示设置。
+`.txt` 保存纯文字；`.edgenote.json` 保存图片位置、富文本格式和当前笔记的显示设置。移动或备份带格式的笔记时，请将两个文件放在一起。
 
-移动或备份含图片及个性化设置的笔记时，请将这两个文件一起移动。删除辅助文件不会删除正文，但再次打开时无法恢复图片、排版和局部设置。
+全局设置和最近使用的文件夹保存在 Electron 的本机应用数据目录中，不会写入笔记正文。
 
-全局显示设置保存在 Electron 的应用数据目录中，不会写入每篇笔记的 `.txt` 文件。
+### 开发
 
-## 开发与检查
-
-环境要求：
-
-- Windows 10/11
-- Node.js 20 或更高版本
-- npm
-
-启动开发版本：
-
-```powershell
-npm start
-```
-
-执行 JavaScript 语法检查：
+环境要求：Windows 10/11、Node.js 20 或更高版本、npm。
 
 ```powershell
 npm run check
-```
-
-## 打包
-
-生成 Windows 便携版：
-
-```powershell
 npm run dist
 ```
 
-构建结果位于 `dist` 目录。
+`npm run check` 用于检查 JavaScript 源码；`npm run dist` 将 Windows 便携版构建到 `dist` 目录。
 
-## 开源许可
+### AI 工具说明
 
+本项目使用了 AI 生成式工具辅助设计、编程和文档编写。如果使用过程中发现任何问题，欢迎通过 GitHub Issue 指出。
+
+## License / 开源许可
+
+EasyNote is available under the [MIT License](LICENSE).
 本项目采用 [MIT License](LICENSE) 开源。
-
-## 常见问题
-
-### 双击启动脚本后提示找不到 Electron
-
-在项目目录运行 `npm install`，确认生成 `node_modules` 目录后重新启动。
-
-### 打开笔记后只剩文字，图片或背景不见了
-
-检查 `.txt` 旁是否仍有同名的 `.edgenote.json` 文件，并确认其中引用的本地图片没有被移动或删除。
-
-### 设置了全局背景，但某篇笔记没有变化
-
-该笔记可能使用“仅当前笔记”背景。打开“设置”，将背景范围切换为“全局默认”并应用。

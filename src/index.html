@@ -1,59 +1,29 @@
-<!doctype html>
-<html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>贴边笔记</title>
-  <link rel="stylesheet" href="style.css">
-</head>
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>EasyNote</title><link rel="stylesheet" href="style.css"></head>
 <body>
-  <header class="titlebar">
-    <div class="brand"><span class="logo">N</span><span>贴边笔记</span><span id="dirty"></span></div>
-    <div class="window-actions">
-      <button id="topBtn" title="置顶/取消置顶 (Ctrl+T)">📌</button>
-      <button id="minBtn" title="收起为悬浮窗">—</button>
-      <button id="closeBtn" class="close" title="关闭">×</button>
-    </div>
-  </header>
-  <main>
-    <nav class="toolbar">
-      <button id="newBtn">新建</button>
-      <button id="openBtn">打开</button>
-      <button id="saveBtn" class="primary">保存</button>
-      <button id="saveAsBtn">另存为</button>
-      <span class="divider"></span>
-      <button id="imageBtn">插入图片</button>
-      <button id="settingsBtn">⚙ 设置</button>
-    </nav>
-    <nav class="formatbar">
-      <div class="search-box"><input id="searchInput" type="search" placeholder="搜索笔记…"><button id="searchPrev" title="上一个">↑</button><button id="searchNext" title="下一个">↓</button><button id="searchClose" title="清除搜索">×</button><span id="searchResult"></span></div>
-      <span class="spacer"></span>
-      <span class="tip">Ctrl+F 搜索 · Ctrl+S 保存 · Ctrl+T 置顶</span>
-    </nav>
-    <div id="editorShell"><section id="editor" contenteditable="true" spellcheck="true" data-placeholder="写点什么吧……"></section></div>
-    <footer><span id="status">未命名.txt</span><span id="count">0 字</span></footer>
-  </main>
-  <div id="settingsModal" class="modal" hidden>
-    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
-      <div class="modal-header"><h2 id="settingsTitle">笔记显示设置</h2><button id="settingsClose" title="关闭">×</button></div>
-      <div class="settings-grid">
-        <div class="settings-form">
-          <fieldset><legend>背景应用范围</legend>
-            <label><input type="radio" name="backgroundScope" value="global" checked> 全局默认</label>
-            <label><input type="radio" name="backgroundScope" value="local"> 仅当前笔记</label>
-            <p class="help">全局设置用于新笔记；局部设置随当前笔记保存。</p>
-          </fieldset>
-          <label class="setting-row"><span>背景图片</span><span><button id="chooseBackgroundBtn">选择图片</button><button id="clearBackgroundBtn">清除</button></span></label>
-          <label class="setting-row"><span>背景透明度</span><span><input id="backgroundOpacity" type="range" min="0" max="100" value="18"><b id="opacityValue">18%</b></span></label>
-          <label class="setting-row"><span>字号</span><span><input id="fontSize" type="number" min="10" max="48" value="17"> px</span></label>
-          <label class="setting-row"><span>行距</span><span><input id="lineHeight" type="number" min="1" max="3" step="0.1" value="1.8"></span></label>
-          <label class="setting-row"><span>行间横线</span><input id="ruledLines" type="checkbox"></label>
-        </div>
-        <div><div class="preview-label">效果预览</div><div id="settingsPreview"><p>在这里预览笔记背景与排版。</p><p>每一行文字都清晰可读。</p><p>调整选项后会立即更新。</p></div></div>
-      </div>
-      <div class="modal-actions"><button id="settingsCancel">取消</button><button id="settingsApply" class="primary">应用设置</button></div>
-    </div>
-  </div>
-  <script src="renderer.js"></script>
-</body>
-</html>
+<header class="titlebar"><div class="brand"><span class="logo">N</span><span data-i18n="appName">贴边笔记</span><span id="dirty"></span></div><div class="window-actions"><button id="topBtn" data-i18n-title="pin"><span class="pin-icon"></span></button><button id="minBtn" data-i18n-title="minimize">—</button><button id="closeBtn" class="close" data-i18n-title="close">×</button></div></header>
+<main>
+  <nav class="toolbar" id="toolbar"><button id="newBtn" data-i18n="new">新建</button><button id="openBtn" data-i18n="open">打开</button><button id="saveBtn" class="primary" data-i18n="save">保存</button><button id="saveAsBtn" data-i18n="saveAs">另存为</button><span class="divider"></span><button id="imageBtn" data-i18n="insertImage">插入图片</button><button id="settingsBtn" data-i18n="settings">⚙ 设置</button><button id="helpBtn" data-i18n="help">? 帮助</button></nav>
+  <nav class="formatbar" id="formatbar"><div class="search-box"><input id="searchInput" type="search" data-i18n-placeholder="search"><button id="searchPrev">↑</button><button id="searchNext">↓</button><button id="searchClose">×</button><span id="searchResult"></span></div><span class="spacer"></span><span class="tip">Ctrl+F · Ctrl+S · Ctrl+T</span></nav>
+  <div id="editorShell"><section id="editor" contenteditable="true" spellcheck="true" data-i18n-placeholder="placeholder"></section></div>
+  <footer><span id="status">未命名.txt</span><span id="count">0 字</span></footer>
+</main>
+
+<div id="settingsModal" class="modal" hidden><div class="modal-card settings-card" role="dialog" aria-modal="true"><div class="modal-header"><h2 data-i18n="displaySettings">显示设置</h2><button id="settingsClose">×</button></div><div class="settings-grid"><div class="settings-form">
+  <fieldset><legend data-i18n="applyScope">应用范围</legend><label><input type="radio" name="settingsScope" value="global" checked> <span data-i18n="globalDefault">全局默认</span></label><label><input type="radio" name="settingsScope" value="local"> <span data-i18n="currentNote">当前笔记</span></label></fieldset>
+  <label class="setting-row"><span data-i18n="background">背景图片</span><span><button id="chooseBackgroundBtn" data-i18n="choose">选择</button><button id="clearBackgroundBtn" data-i18n="clear">清除</button></span></label>
+  <label class="setting-row"><span data-i18n="opacity">背景透明度</span><span><input id="backgroundOpacity" type="range" min="0" max="100"><b id="opacityValue"></b></span></label>
+  <label class="setting-row"><span data-i18n="fontSize">字号</span><span><input id="fontSize" type="number" min="10" max="48"> px</span></label>
+  <label class="setting-row"><span data-i18n="lineHeight">行距</span><input id="lineHeight" type="number" min="1" max="3" step="0.1"></label>
+  <label class="setting-row"><span data-i18n="ruledLines">行间横线</span><input id="ruledLines" type="checkbox"></label>
+  <label class="setting-row"><span data-i18n="colorMethod">颜色选择方式</span><select id="colorMethod"><option value="rgb">RGB</option><option value="mixer" data-i18n="mixer">通道混合器</option><option value="indexed" data-i18n="indexed">索引颜色</option></select></label>
+  <div id="rgbPanel" class="color-panel"><label>R <input id="red" type="range" min="0" max="255"></label><label>G <input id="green" type="range" min="0" max="255"></label><label>B <input id="blue" type="range" min="0" max="255"></label></div>
+  <div id="mixerPanel" class="color-panel" hidden><label>H <input id="hue" type="range" min="0" max="360"></label><label>S <input id="saturation" type="range" min="0" max="100"></label><label>L <input id="lightness" type="range" min="0" max="100"></label></div>
+  <div id="indexedPanel" class="palette" hidden><button data-color="#2f2b26"></button><button data-color="#b42318"></button><button data-color="#c85a00"></button><button data-color="#2e7d32"></button><button data-color="#1565c0"></button><button data-color="#6a1b9a"></button><button data-color="#ffffff"></button><button data-color="#777777"></button></div>
+  <label class="setting-row"><span data-i18n="fontColor">字体颜色</span><span><i id="colorSwatch"></i><code id="colorValue"></code></span></label>
+  <label class="setting-row"><span data-i18n="hideToolbar">隐藏功能栏</span><input id="hideToolbar" type="checkbox"></label><label class="setting-row"><span data-i18n="hideSearch">隐藏搜索栏</span><input id="hideSearch" type="checkbox"></label>
+  <label class="setting-row"><span data-i18n="language">语言</span><select id="language"><option value="zh">中文</option><option value="en">English</option></select></label>
+</div><div><div class="preview-label" data-i18n="preview">效果预览</div><div id="settingsPreview"><p data-i18n="preview1">在这里预览笔记背景与排版。</p><p data-i18n="preview2">调整选项后会立即更新。</p></div></div></div><div class="modal-actions"><button id="settingsCancel" data-i18n="cancel">取消</button><button id="settingsApply" class="primary" data-i18n="apply">应用设置</button></div></div></div>
+
+<div id="helpModal" class="modal" hidden><div class="modal-card help-card"><div class="modal-header"><h2 data-i18n="helpTitle">快捷键帮助</h2><button id="helpClose">×</button></div><div class="help-content"><table><tr><td>Ctrl+S</td><td data-i18n="hSave">保存</td></tr><tr><td>Ctrl+Shift+S</td><td data-i18n="hSaveAs">另存为</td></tr><tr><td>Ctrl+F</td><td data-i18n="hSearch">显示并聚焦搜索</td></tr><tr><td>Ctrl+T</td><td data-i18n="hPin">切换窗口置顶</td></tr><tr><td>Esc</td><td data-i18n="hEsc">关闭弹窗</td></tr><tr><td data-i18n="rightClick">编辑区右键</td><td data-i18n="hColor">调整选中文字颜色</td></tr></table></div></div></div>
+<div id="colorMenu" class="context-menu" hidden><div data-i18n="textColor">文字颜色</div><div class="palette mini"><button data-color="#2f2b26"></button><button data-color="#b42318"></button><button data-color="#c85a00"></button><button data-color="#2e7d32"></button><button data-color="#1565c0"></button><button data-color="#6a1b9a"></button></div><button id="moreColors" data-i18n="moreColors">更多颜色…</button></div>
+<script src="renderer.js"></script></body></html>
